@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom responsive utilities */
+@layer utilities {
+  
+  .container-responsive {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Improved mobile touch targets */
+@media (max-width: 768px) {
+  button, 
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Better scrolling on mobile */
+@media (max-width: 768px) {
+  html {
+    -webkit-overflow-scrolling: touch;
+  }
+}

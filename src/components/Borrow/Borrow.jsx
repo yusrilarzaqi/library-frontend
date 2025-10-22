@@ -44,6 +44,8 @@ const Borrow = () => {
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [expandedCard, setExpandedCard] = useState(null);
 
   const { user } = useAuth();
 
@@ -71,6 +73,16 @@ const Borrow = () => {
 
   useEffect(() => {
     fetchData();
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+
   }, [fetchData])
 
 
@@ -187,6 +199,10 @@ const Borrow = () => {
     { value: 'returned', label: 'Dikembalikan', count: stats.returned, color: 'bg-green-500' }
   ];
 
+  const toggleCardExpand = (cardId) => {
+    setExpandedCard(expandedCard === cardId ? null : cardId);
+  }
+
   if (loading && data.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -195,8 +211,269 @@ const Borrow = () => {
     );
   }
 
+  const BorrowCard = ({ item }) => (
+    <div className={`rounded-lg shadow-sm border p-4 mb-4 transition-all duration-300 ${expandedCard === item._id ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
+      {/* Header */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900 text-sm line-clamp-2">
+            {item.book?.judul || 'N/A'}
+          </h3>
+          <p className="text-gray-600 text-xs mt-1">Oleh {item.book?.penulis || 'N/A'}</p>
+        </div>
+        {getStatusBadge(item.status)}
+      </div>
+
+      {/* Basic Info */}
+      <div className="space-y-2 text-xs text-gray-600 mb-3">
+        <div className="flex justify-between">
+          <span>Tanggal Pinjam:</span>
+          <span className="font-medium">{formatDate(item.borrowedAt)}</span>
+        </div>
+        {item.status === 'returned' && (
+          <div className="flex justify-between">
+            <span>Tanggal Kembali:</span>
+            <span className="font-medium text-green-600">{formatDate(item.returnedAt || item.borrowedAt)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Book Details */}
+      <div className="space-y-2 text-xs text-gray-600 mb-3">
+        <div className="flex justify-between">
+          <span>Nomor Buku:</span>
+          <span className="font-mono">{item.book?.nomor || 'N/A'}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Level:</span>
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+            {item.book?.level || 'N/A'}
+          </span>
+        </div>
+      </div>
+
+      {/* Due Date Info - Only for borrowed status */}
+      {item.status === 'borrowed' && item.dueDate && (
+        <div className="mb-3">
+          {getDueDateBadge(item.dueDate, item.status)}
+        </div>
+      )}
+
+      {/* Expandable Details */}
+      {expandedCard === item._id && (
+        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3 animate-fadeIn">
+          {/* User Info */}
+          <div className="flex items-center space-x-3">
+            {item.user?.avatar ? (
+              <img
+                alt={item.user.username}
+                src={item.user.avatar}
+                className="w-8 h-8 rounded-full object-cover border cursor-pointer hover:opacity-80"
+                onClick={() => {
+                  setShowImageModal(true)
+                  setSelectedImage(item.user.avatar)
+                }}
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                {item.user?.username?.charAt(0).toUpperCase() || 'U'}
+              </div>
+            )}
+            <div>
+              <div className="text-sm font-medium text-gray-900">
+                {item.user?.username || 'N/A'}
+              </div>
+              <div className="text-xs text-gray-500">
+                {item.user?.email || 'N/A'}
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Book Info */}
+          <div className="text-xs text-gray-600">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="font-medium">Penerbit:</span>
+                <p>{item.book?.penerbit || 'N/A'}</p>
+              </div>
+              <div>
+                <span className="font-medium">Tahun:</span>
+                <p>{item.book?.tahun || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Transaction ID */}
+          <div className="text-xs text-gray-500">
+            <span className="font-medium">ID Transaksi:</span>
+            <p className="font-mono">{item._id}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Action Button */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => toggleCardExpand(item._id)}
+          className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
+        >
+          <span>{expandedCard === item._id ? 'Sembunyikan' : 'Lihat'} Detail</span>
+          <svg
+            className={`w-4 h-4 transition-transform ${expandedCard === item._id ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
+  const DesktopTableView = () => (
+    <table className="w-full">
+      <thead className="bg-gray-50">
+        <tr>
+          <th
+            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+            onClick={() => handleSort('book.judul')}
+          >
+            <div className="flex items-center space-x-1">
+              <span>Buku</span>
+              <SortIcon field="book.judul" />
+            </div>
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Info Buku
+          </th>
+          <th
+            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+            onClick={() => handleSort('user.username')}
+          >
+            <div className="flex items-center space-x-1">
+              <span>Peminjam</span>
+              <SortIcon field="user.username" />
+            </div>
+          </th>
+          <th
+            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+            onClick={() => handleSort('borrowedAt')}
+          >
+            <div className="flex items-center space-x-1">
+              <span>Tanggal Transaksi</span>
+              <SortIcon field="borrowedAt" />
+            </div>
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Due Date
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Status
+          </th>
+        </tr>
+      </thead>
+      <tbody className="bg-white divide-y divide-gray-200">
+        {data.map((item) => (
+          <tr key={item._id} className="hover:bg-gray-50 transition-colors">
+            {/* Book Info */}
+            <td className="px-6 py-4">
+              <div>
+                <div className="text-sm font-medium text-gray-900">
+                  {item.book?.judul || 'N/A'}
+                </div>
+                <div className="text-sm text-gray-500">
+                  oleh {item.book?.penulis || 'N/A'}
+                </div>
+              </div>
+            </td>
+
+            {/* Book Details */}
+            <td className="px-6 py-4">
+              <div className="space-y-1">
+                <div className="text-sm text-gray-900">
+                  No: <span className="font-mono">{item.book?.nomor || 'N/A'}</span>
+                </div>
+                <div className="text-xs">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    {item.book?.level || 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            {/* User Info */}
+            <td className="px-6 py-4">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  {/* Avatar */}
+                  {item.user.avatar ? (
+                    <img
+                      alt={item.user.username}
+                      src={item.user.avatar}
+                      className="w-10 h-10 rounded-full object-cover border cursor-pointer hover:opacity-80"
+                      onClick={() => {
+                        setShowImageModal(true)
+                        setSelectedImage(item.user.avatar)
+                      }}
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      {item.user?.username?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {item.user?.username || 'N/A'}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {item.user?.email || 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            {/* Transaction Dates */}
+            <td className="px-6 py-4">
+              <div className="space-y-1">
+                <div className="text-sm text-gray-900">
+                  <span className="font-medium">Pinjam:</span> {formatDate(item.borrowedAt)}
+                </div>
+                {item.status === 'returned' && (
+                  <div className="text-sm text-green-600">
+                    <span className="font-medium">Kembali:</span> {formatDate(item.returnedAt || item.borrowedAt)}
+                  </div>
+                )}
+              </div>
+            </td>
+
+            {/* Due Date */}
+            <td className="px-6 py-4">
+              {item.status === 'borrowed' && item.dueDate ? (
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-900">
+                    {formatDate(item.dueDate)}
+                  </div>
+                  {getDueDateBadge(item.dueDate, item.status)}
+                </div>
+              ) : (
+                <span className="text-sm text-gray-400">-</span>
+              )}
+            </td>
+
+            {/* Status */}
+            <td className="px-6 py-4">
+              {getStatusBadge(item.status)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6 mt-10">
+    <div className="min-h-screen bg-gray-50 p-6 sm:mt-10">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -347,145 +624,13 @@ const Borrow = () => {
 
           {/* Tabel Content */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('book.judul')}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>Buku</span>
-                      <SortIcon field="book.judul" />
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Info Buku
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('user.username')}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>Peminjam</span>
-                      <SortIcon field="user.username" />
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort('borrowedAt')}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>Tanggal Transaksi</span>
-                      <SortIcon field="borrowedAt" />
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Due Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+            {isMobile ? (
+              <>
                 {data.map((item) => (
-                  <tr key={item._id} className="hover:bg-gray-50 transition-colors">
-                    {/* Book Info */}
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {item.book?.judul || 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          oleh {item.book?.penulis || 'N/A'}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Book Details */}
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="text-sm text-gray-900">
-                          No: <span className="font-mono">{item.book?.nomor || 'N/A'}</span>
-                        </div>
-                        <div className="text-xs">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                            {item.book?.level || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* User Info */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          {/* Avatar */}
-                          {item.user.avatar ? (
-                            <img
-                              alt={item.user.username}
-                              src={item.user.avatar}
-                              className="w-10 h-10 rounded-full object-cover border cursor-pointer hover:opacity-80"
-                              onClick={() => {
-                                setShowImageModal(true)
-                                setSelectedImage(item.user.avatar)
-                              }}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                              {item.user?.username?.charAt(0).toUpperCase() || 'U'}
-                            </div>
-
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {item.user?.username || 'N/A'}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {item.user?.email || 'N/A'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Transaction Dates */}
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="text-sm text-gray-900">
-                          <span className="font-medium">Pinjam:</span> {formatDate(item.borrowedAt)}
-                        </div>
-                        {item.status === 'returned' && (
-                          <div className="text-sm text-green-600">
-                            <span className="font-medium">Kembali:</span> {formatDate(item.returnedAt || item.borrowedAt)}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Due Date */}
-                    <td className="px-6 py-4">
-                      {item.status === 'borrowed' && item.dueDate ? (
-                        <div className="space-y-2">
-                          <div className="text-sm text-gray-900">
-                            {formatDate(item.dueDate)}
-                          </div>
-                          {getDueDateBadge(item.dueDate, item.status)}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4">
-                      {getStatusBadge(item.status)}
-                    </td>
-                  </tr>
+                  <BorrowCard key={item.id} item={item} />
                 ))}
-              </tbody>
-            </table>
+              </>
+            ) : (<DesktopTableView />)}
           </div>
 
           {/* Loading State */}

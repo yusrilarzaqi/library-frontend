@@ -1,5 +1,5 @@
 // src/components/organisms/Dashboard.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import borrowService from '../../services/borrowService';
 import {
   Chart as ChartJS,
@@ -68,7 +68,7 @@ const StatCard = ({ title, value, subtitle, icon, color = "blue", trend }) => {
   }
 
   return (
-    <div className={`border rounded-lg p-6 shadow-sm ${colorClasses[color].split(' ')[0]} ${colorClasses[color].split(' ')[1]}`}>
+    <div className={`border rounded-lg p-6 shadow-sm ${colorClasses[color].split(' ')[0]} ${colorClasses[color].split(' ')[1]} sm:p-6`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -98,26 +98,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchRange();
-  }, []);
-
-  useEffect(() => {
-    if (selectedRange) {
-      fetchStats(selectedRange);
-    }
-  }, [selectedRange]);
-
-  const fetchRange = async () => {
-    try {
-      const response = await borrowService.getRange();
-      setRanges(response.data);
-    } catch (error) {
-      toast.error(`Failed to fetch range: ${error.message}`);
-    }
-  }
-
-  const fetchStats = async (range) => {
+  const fetchStats = useCallback(async (range) => {
     try {
       setLoading(true);
       setError("");
@@ -129,7 +110,23 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  const fetchRange = useCallback(async () => {
+    try {
+      const response = await borrowService.getRange();
+      setRanges(response.data);
+    } catch (error) {
+      toast.error(`Failed to fetch range: ${error.message}`);
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchRange();
+    fetchStats(selectedRange);
+  }, [fetchStats, selectedRange, fetchRange]);
+
+
 
   const handleRangeChange = (event) => {
     setSelectedRange(event.target.value);
@@ -153,6 +150,7 @@ const Dashboard = () => {
         }
         return acc;
       }, {});
+
       const labels = Object.keys(monthlyGrouped).sort();
       const borrwedData = labels.map(month => monthlyGrouped[month].borrowed);
       const returnedData = labels.map(month => monthlyGrouped[month].returned);
@@ -194,6 +192,7 @@ const Dashboard = () => {
       const labels = Object.keys(dailyGrouped).sort();
       const borrowedData = labels.map(date => dailyGrouped[date].borrowed);
       const returnedData = labels.map(date => dailyGrouped[date].returned);
+      console.log(labels)
 
       return {
         labels,
@@ -252,15 +251,8 @@ const Dashboard = () => {
     },
   };
 
-  const getRangeLabel = (value) => {
-    const range = ranges.find(r => r.value === value)
-    return range ? range.label : value
-  }
-
-
-
   if (loading && !stats) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="flex flex-col items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         <p className="mt-4 text-gray-600">Memuat dashboard...</p>
@@ -269,28 +261,25 @@ const Dashboard = () => {
   )
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-gray-50 pt-16 sm:pt-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">📊 Dashboard Overview</h1>
-          <p className="text-gray-600 mt-2">
-            Statistik lengkap peminjaman buku, pengguna, dan koleksi
-          </p>
-        </div>
-
-        {/* Range Selector */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+        <div className="mb-6 p-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                Statistik lengkap peminjaman buku, pengguna, dan koleksi
+              </p>
+            </div>
+
+            {/* Range Selector */}
             <div className="w-full sm:w-64">
-              <label htmlFor="range-select" className="block text-sm font-medium text-gray-700 mb-2">
-                Pilih Periode
-              </label>
               <select
                 id="range-select"
                 value={selectedRange}
                 onChange={handleRangeChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 disabled={loading}
               >
                 {ranges.map((range) => (
@@ -299,11 +288,6 @@ const Dashboard = () => {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="flex-1">
-              <p className="text-gray-600">
-                Menampilkan data untuk: <span className="font-semibold text-gray-900">{getRangeLabel(selectedRange)}</span>
-              </p>
             </div>
           </div>
         </div>
@@ -322,31 +306,31 @@ const Dashboard = () => {
         {stats && (
           <>
             {/* Main Staistic Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <StatCard
                 title="Total Pengguna"
-                value={stats.users.total}
-                subtitle={`${stats.users.admin} admin, ${stats.users.user} user`}
+                value={stats?.users.total}
+                subtitle={`${stats?.users.admin} admin, ${stats?.users.user} user`}
                 icon="user"
                 color="indigo"
               />
               <StatCard
                 title="Total Buku"
-                value={stats.books.total}
-                subtitle={`${stats.books.available} tersedia, ${stats.books.borrowed} dipinjam`}
+                value={stats?.books.total}
+                subtitle={`${stats?.books.available} tersedia, ${stats?.books.borrowed} dipinjam`}
                 icon="books"
                 color="blue"
               />
               <StatCard
                 title="Buku Dipinjam"
-                value={stats.borrowed}
+                value={stats?.borrowed || 0}
                 subtitle="Periode terpilih"
                 icon="borrowed"
                 color="orange"
               />
               <StatCard
                 title="Buku Dikembalikan"
-                value={stats.returned}
+                value={stats?.returned || 0}
                 subtitle="Periode terpilih"
                 icon="returned"
                 color="green"
@@ -354,25 +338,26 @@ const Dashboard = () => {
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid lg:grid-cols-2 xs:grid-cols-1 gap-6 mb-8">
               {/* Transaction Chart */}
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Statistik Peminjaman & Pengembalian
-                </h3>
-                <div className="h-80">
-                  {getTransactionChartData() ? (
+              {getTransactionChartData() ? (
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Statistik Peminjaman & Pengembalian
+                  </h3>
+                  <div className="h-80">
                     <Bar
                       data={getTransactionChartData()}
                       options={chartOptions}
                     />
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-gray-50">
-                      Tidak Ada data transaksi untuk periode ini
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-50">
+                  Tidak Ada data transaksi untuk periode ini
+                </div>
+              )}
+
 
               {/* Popular Books Chart */}
               <div className="bg-white rounded-lg shadow-sm border p-6">
