@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import borrowService from '../../services/borrowService';
 import { toast } from 'react-toastify';
@@ -47,11 +47,7 @@ const Borrow = () => {
 
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchData();
-  }, [filters])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       if (user.role !== 'admin') {
@@ -71,7 +67,12 @@ const Borrow = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData])
+
 
   const handleSearch = (e) => {
     setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }));
@@ -423,9 +424,13 @@ const Borrow = () => {
                           {/* Avatar */}
                           {item.user.avatar ? (
                             <img
+                              alt={item.user.username}
                               src={item.user.avatar}
                               className="w-10 h-10 rounded-full object-cover border cursor-pointer hover:opacity-80"
-                              onClick={() => (setShowImageModal(true), setSelectedImage(item.user.avatar))}
+                              onClick={() => {
+                                setShowImageModal(true)
+                                setSelectedImage(item.user.avatar)
+                              }}
                             />
                           ) : (
                             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">

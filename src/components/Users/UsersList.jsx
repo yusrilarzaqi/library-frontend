@@ -165,6 +165,7 @@ const UsersTable = () => {
 
   const handleUpdate = async () => {
     try {
+      setLoading(true);
       const formData = new FormData();
       formData.append('username', editForm.username);
       formData.append('email', editForm.email);
@@ -190,6 +191,8 @@ const UsersTable = () => {
           general: 'Error membuat buku: ' + errorMessage
         });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
