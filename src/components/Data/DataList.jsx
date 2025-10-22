@@ -5,6 +5,7 @@ import borrowService from '../../services/borrowService';
 import {
   useAuth
 } from '../../context/AuthContext';
+import { useCallback } from 'react';
 
 const PreviewImage = ({ image, setShowPreviewModal }) => {
   return (
@@ -74,17 +75,9 @@ const DataList = () => {
   const [availableUsers, setAvailableUsers] = useState([]);
   const [formErrors, setFormErrors] = useState({});
 
-
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchData();
-    if (user.role === 'admin') {
-      fetchAvailableUsers();
-    }
-  }, [filters]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await dataService.getAllBooks(filters);
@@ -98,16 +91,25 @@ const DataList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const fetchAvailableUsers = async () => {
-    try {
-      const response = await userService.getAllUsers();
-      setAvailableUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching available users:', error);
+  const fetchAvailableUsers = useCallback(async () => {
+    if (user.role === 'admin') {
+      try {
+        const response = await userService.getAllUsers();
+        setAvailableUsers(response.data);
+      } catch (error) {
+        console.error('Error fetching available users:', error);
+      }
     }
-  };
+  }, [user.role]);
+
+
+  useEffect(() => {
+    fetchData();
+    fetchAvailableUsers();
+  }, [fetchData, fetchAvailableUsers]);
+
 
   const fetchBookDetails = async (bookId) => {
     try {
@@ -854,7 +856,10 @@ const DataList = () => {
 
       {/* Add Book Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => (setShowAddModal(false), setPreview(false))}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => {
+          setShowAddModal(false)
+          setPreview(false)
+        }}>
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <form className="p-6" onSubmit={handleCreate} encType="multipart/form-data">
               <h3 className="text-lg font-semibold mb-4">Tambah Buku Baru</h3>
@@ -1000,7 +1005,10 @@ const DataList = () => {
                 ) : (
                   <>
                     <button
-                      onClick={() => (setShowAddModal(false), setPreview(null))}
+                      onClick={() => {
+                        setShowAddModal(false)
+                        setPreview(null)
+                      }}
                       className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                     >
                       Batal
@@ -1115,7 +1123,10 @@ const DataList = () => {
                         src={selectedBook.book.coverImage}
                         alt={`Cover ${selectedBook.book.judul}`}
                         className="w-full h-full object-cover rounded-lg shadow-md cursor-pointer hover:opacity-80"
-                        onClick={() => (setShowPreviewModal(true), setSelectedImage(selectedBook.book.coverImage))}
+                        onClick={() => {
+                          setShowPreviewModal(true)
+                          setSelectedImage(selectedBook.book.coverImage)
+                        }}
                         onError={(e) => {
                           e.target.src = 'https://placehold.co/300x400?text=Cover+Tidak+Tersedia';
                         }}
@@ -1261,7 +1272,10 @@ const DataList = () => {
       {/* Edit Book Modal */}
       {
         showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => (setShowEditModal(false), setPreview(false))}>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => {
+            setShowEditModal(false)
+            setPreview(false)
+          }}>
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <form className="p-6" onSubmit={handleUpdate} encType="multipart/form-data">
                 <h3 className="text-lg font-semibold mb-4">Edit Buku</h3>
@@ -1369,7 +1383,10 @@ const DataList = () => {
                   ) : (
                     <>
                       <button
-                        onClick={() => (setShowEditModal(false), setPreview(false))}
+                        onClick={() => {
+                          setShowEditModal(false)
+                          setPreview(false)
+                        }}
                         className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                       >
                         Batal

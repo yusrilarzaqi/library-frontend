@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import userService from '../../services/userService';
 
 const PreviewAvatar = ({ avatar, setShowPreviewModal }) => {
@@ -58,15 +58,11 @@ const UsersTable = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
-
-  useEffect(() => {
-    fetchData();
-  }, [filters]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await userService.getAllUsers(filters);
+      console.log(filters)
 
       setData(response.data);
       setStats(response.stats);
@@ -76,7 +72,12 @@ const UsersTable = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
 
   const fetchUserDetails = async (userId) => {
     try {
@@ -513,8 +514,12 @@ const UsersTable = () => {
                         {user.avatar ? (
                           <img
                             src={user.avatar}
+                            alt={user.username}
                             className="w-10 h-10 rounded-full object-cover border cursor-pointer hover:opacity-80"
-                            onClick={() => (setShowPreviewModal(true), setSelectedImage(user.avatar))}
+                            onClick={() => {
+                              setShowPreviewModal(true)
+                              setSelectedImage(user.avatar)
+                            }}
                           />
                         ) : (
                           <div className="flex-shrink-0">
@@ -807,7 +812,10 @@ const UsersTable = () => {
 
               <div className="flex justify-end space-x-3 mt-6">
                 <button
-                  onClick={() => (setShowAddModal(false), setPreview(null))}
+                  onClick={() => {
+                    setShowAddModal(false)
+                    setPreview(null)
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                 >
                   Batal
@@ -1004,7 +1012,10 @@ const UsersTable = () => {
 
               <div className="flex justify-end space-x-3 mt-6">
                 <button
-                  onClick={() => (setShowEditModal(false), setPreview(null))}
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setPreview(null)
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                 >
                   Batal

@@ -24,7 +24,7 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  }, [user])
+  }, [])
 
   useEffect(() => {
     loadUser()
