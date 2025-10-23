@@ -122,6 +122,7 @@ const Register = () => {
                 <InputFile
                   name="avatar"
                   placeholder="Avatar"
+                  variant="primary"
                   onChange={handleFileChange}
                 />
               </div>

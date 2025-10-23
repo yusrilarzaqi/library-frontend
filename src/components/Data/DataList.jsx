@@ -6,6 +6,8 @@ import {
   useAuth
 } from '../../context/AuthContext';
 import { useCallback } from 'react';
+import getDueDateBadge from '../atoms/getDueDateBadge';
+import InputFile from '../atoms/InputFile';
 
 const PreviewImage = ({ image, setShowPreviewModal }) => {
   return (
@@ -295,9 +297,9 @@ const DataList = () => {
       formData.append('kodePenulis', addForm.kodePenulis);
       if (coverImage) formData.append('coverImage', coverImage);
       await dataService.createBook(formData);
-      setShowAddModal(false);
+      // setShowAddModal(false);
       setFormErrors({});
-      fetchData(); // Refresh data
+      // fetchData(); // Refresh data
     } catch (error) {
       console.error('Error creating book:', error);
       const errorMessage = error.response?.data?.message || error.message;
@@ -398,7 +400,7 @@ const DataList = () => {
 
     const config = statusConfig[status];
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${config.color} flex items-center space-x-1`}>
+      <span className={`px-3 py-1 rounded text-xs font-medium border ${config.color} space-x-1`}>
         <span>{config.icon}</span>
         <span>{config.label}</span>
       </span>
@@ -901,7 +903,7 @@ const DataList = () => {
                     disabled={filters.page === 1}
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Sebelumnya
+                    {!isMobile ? 'Sebelumnya' : '«'}
                   </button>
                   <div className="flex space-x-1">
                     {[...Array(pagination.totalPages)].map((_, index) => {
@@ -935,7 +937,7 @@ const DataList = () => {
                     disabled={filters.page === pagination.totalPages}
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Selanjutnya
+                    {!isMobile ? 'Selanjutnya' : '»'}
                   </button>
                 </div>
               </div>
@@ -1067,13 +1069,13 @@ const DataList = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Cover Image
                   </label>
-                  <input
+                  <InputFile
                     id="coverImage"
                     name="coverImage"
                     type="file"
                     accept="image/*"
+                    variant="success"
                     onChange={handleFileChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   {preview && (
                     <p className="text-sm text-green-600 mt-1">
@@ -1258,26 +1260,42 @@ const DataList = () => {
                         <div>
                           <h4 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Status</h4>
                           <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-600 mb-1">Status Buku</label>
-                              <div className="mt-1">{getStatusBadge(selectedBook.book.status)}</div>
-                            </div>
-                            {selectedBook.book.status === 'borrowed' && selectedBook.book.borrowedBy && (
-                              <>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Dipinjam Oleh</label>
-                                <div className="flex items-center space-x-3 mt-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    {selectedBook.book.borrowedBy.username?.charAt(0).toUpperCase()}
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-orange-800">{selectedBook.book.borrowedBy.username}</p>
-                                    <p className="text-sm text-orange-600">{selectedBook.book.borrowedBy.email}</p>
-                                  </div>
+                            <div className={`${selectedBook.dueDate?.dueDate && 'flex justify-around '}`}>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Status Buku</label>
+                                <div className="mt-1">{getStatusBadge(selectedBook.book.status)}</div>
+                              </div>
+                              {selectedBook.book.status === 'borrowed' && selectedBook.book.borrowedBy && (
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-600 mb-1">Tanggal Pengembalian</label>
+                                  <div className="mt-1">{getDueDateBadge(selectedBook.dueDate.dueDate)}</div>
                                 </div>
-                              </>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
+                        {selectedBook.book.status === 'borrowed' && selectedBook.book.borrowedBy && (
+                          <>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Dipinjam Oleh</label>
+                            <div className="flex items-center space-x-3 mt-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                              {selectedBook.book.borrowedBy?.avatar ? (
+                                <img
+                                  src={selectedBook.book.borrowedBy?.avatar}
+                                  alt="Avatar"
+                                  className="w-10 h-10 rounded-full"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                  {selectedBook.book.borrowedBy.username?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium text-orange-800">{selectedBook.book.borrowedBy.username}</p>
+                                <p className="text-sm text-orange-600">{selectedBook.book.borrowedBy.email}</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Technical Information */}
@@ -1455,11 +1473,12 @@ const DataList = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Cover Image
                     </label>
-                    <input
+                    <InputFile
+                      id="coverImage"
                       name="coverImage"
-                      type="file"
+                      accept="image/*"
+                      variant="primary"
                       onChange={handleFileChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     {preview && (
                       <p className="text-sm text-green-600 mt-1">

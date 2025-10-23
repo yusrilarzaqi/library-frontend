@@ -85,6 +85,7 @@ const UserForm = ({ onUpdate, onCancel, initialData = {} }) => {
               name="avatar"
               type="file"
               accept="image/*"
+              variant="primary"
               onChange={handleFileChange}
             />
             {preview && (

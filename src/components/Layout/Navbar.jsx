@@ -3,7 +3,7 @@ import LinkComponent from '../atoms/Link';
 import Button from '../atoms/Button';
 import { useAuth } from '../../context/AuthContext';
 import {
-  ClipboardListIcon, HomeIcon, BookOpenIcon, LoginIcon, LogoutIcon, UsersIcon, UserIcon, ChartPieIcon, BookmarkIcon, XIcon, MenuIcon
+  ClipboardListIcon, HomeIcon, LoginIcon, LogoutIcon, UsersIcon, UserIcon, ChartPieIcon, BookmarkIcon, XIcon, MenuIcon
 } from '@heroicons/react/outline';
 import { useState } from 'react';
 
@@ -28,7 +28,7 @@ const Navbar = () => {
     <nav className="bg-white fixed w-full z-20 top-0 start-0 border-b border-gray-200">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <div className="flex items-center space-x-3">
-          <BookOpenIcon className="h-8 w-8 text-blue-600" />
+          <img className='h-10 w-10' src='/Semarang.svg' alt="coat of arms of Semarang" />
           <span className="self-center text-sm md:text-lg xl:text-2xl font-semibold whitespace-nowrap">Perpustakaan Kelurahan Bubakan</span>
         </div>
 

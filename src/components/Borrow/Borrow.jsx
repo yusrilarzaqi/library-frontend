@@ -2,6 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import borrowService from '../../services/borrowService';
 import { toast } from 'react-toastify';
+import SortIcon from '../atoms/SortIcon'
+import BorrowCard from '../molecules/BorrowCard'
+import formatDate from '../atoms/formatDate'
+import getDueDateBadge from '../atoms/getDueDateBadge';
+import getStatusBadge from '../atoms/getStatusBadge'
 
 const PreviewAvatar = ({ avatar, setShowImageModal }) => {
   return (
@@ -38,7 +43,7 @@ const Borrow = () => {
     search: '',
     sortBy: 'borrowedAt',
     sortOrder: 'desc',
-    dateForm: '',
+    datefrom: '',
     dateTo: '',
   })
 
@@ -119,80 +124,6 @@ const Borrow = () => {
     })
   }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  };
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      borrowed: {
-        color: 'bg-orange-100 text-orange-800 border-orange-200',
-        label: 'Dipinjam',
-        icon: '📚'
-      },
-      returned: {
-        color: 'bg-green-100 text-green-800 border-green-200',
-        label: 'Dikembalikan',
-        icon: '🔄'
-      }
-    };
-
-    const config = statusConfig[status];
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${config.color} flex items-center space-x-1`}>
-        <span>{config.icon}</span>
-        <span>{config.label}</span>
-      </span>
-    );
-  }
-
-  const getDaysDifference = (dueDate) => {
-    if (!dueDate) return null;
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const getDueDateBadge = (dueDate, status) => {
-    if (status === 'returned') return null;
-
-    const diffDays = getDaysDifference(dueDate);
-    if (diffDays === null) return null;
-
-    let color = 'bg-gray-100 text-gray-800';
-    let text = `Due: ${formatDate(dueDate)}`;
-
-    if (diffDays < 0) {
-      color = 'bg-red-100 text-red-800';
-      text = `Terlambat ${Math.abs(diffDays)} hari`;
-    } else if (diffDays === 0) {
-      color = 'bg-yellow-100 text-yellow-800';
-      text = 'Due hari ini';
-    } else if (diffDays <= 3) {
-      color = 'bg-orange-100 text-orange-800';
-      text = `Due ${diffDays} hari lagi`;
-    }
-
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${color}`}>
-        {text}
-      </span>
-    );
-  };
-
-  const SortIcon = ({ field }) => {
-    if (filters.sortBy !== field) return <span>↕</span>;
-    return filters.sortOrder === 'asc' ? <span>↑</span> : <span>↓</span>;
-  };
-
   const statusFilters = [
     { value: 'all', label: 'Semua', count: stats.total, color: 'bg-gray-500' },
     { value: 'borrowed', label: 'Dipinjam', count: stats.borrowed, color: 'bg-orange-500' },
@@ -211,125 +142,6 @@ const Borrow = () => {
     );
   }
 
-  const BorrowCard = ({ item }) => (
-    <div className={`rounded-lg shadow-sm border p-4 mb-4 transition-all duration-300 ${expandedCard === item._id ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 text-sm line-clamp-2">
-            {item.book?.judul || 'N/A'}
-          </h3>
-          <p className="text-gray-600 text-xs mt-1">Oleh {item.book?.penulis || 'N/A'}</p>
-        </div>
-        {getStatusBadge(item.status)}
-      </div>
-
-      {/* Basic Info */}
-      <div className="space-y-2 text-xs text-gray-600 mb-3">
-        <div className="flex justify-between">
-          <span>Tanggal Pinjam:</span>
-          <span className="font-medium">{formatDate(item.borrowedAt)}</span>
-        </div>
-        {item.status === 'returned' && (
-          <div className="flex justify-between">
-            <span>Tanggal Kembali:</span>
-            <span className="font-medium text-green-600">{formatDate(item.returnedAt || item.borrowedAt)}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Book Details */}
-      <div className="space-y-2 text-xs text-gray-600 mb-3">
-        <div className="flex justify-between">
-          <span>Nomor Buku:</span>
-          <span className="font-mono">{item.book?.nomor || 'N/A'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Level:</span>
-          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-            {item.book?.level || 'N/A'}
-          </span>
-        </div>
-      </div>
-
-      {/* Due Date Info - Only for borrowed status */}
-      {item.status === 'borrowed' && item.dueDate && (
-        <div className="mb-3">
-          {getDueDateBadge(item.dueDate, item.status)}
-        </div>
-      )}
-
-      {/* Expandable Details */}
-      {expandedCard === item._id && (
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-3 animate-fadeIn">
-          {/* User Info */}
-          <div className="flex items-center space-x-3">
-            {item.user?.avatar ? (
-              <img
-                alt={item.user.username}
-                src={item.user.avatar}
-                className="w-8 h-8 rounded-full object-cover border cursor-pointer hover:opacity-80"
-                onClick={() => {
-                  setShowImageModal(true)
-                  setSelectedImage(item.user.avatar)
-                }}
-              />
-            ) : (
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                {item.user?.username?.charAt(0).toUpperCase() || 'U'}
-              </div>
-            )}
-            <div>
-              <div className="text-sm font-medium text-gray-900">
-                {item.user?.username || 'N/A'}
-              </div>
-              <div className="text-xs text-gray-500">
-                {item.user?.email || 'N/A'}
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Book Info */}
-          <div className="text-xs text-gray-600">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="font-medium">Penerbit:</span>
-                <p>{item.book?.penerbit || 'N/A'}</p>
-              </div>
-              <div>
-                <span className="font-medium">Tahun:</span>
-                <p>{item.book?.tahun || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Transaction ID */}
-          <div className="text-xs text-gray-500">
-            <span className="font-medium">ID Transaksi:</span>
-            <p className="font-mono">{item._id}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Action Button */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={() => toggleCardExpand(item._id)}
-          className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
-        >
-          <span>{expandedCard === item._id ? 'Sembunyikan' : 'Lihat'} Detail</span>
-          <svg
-            className={`w-4 h-4 transition-transform ${expandedCard === item._id ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  )
   const DesktopTableView = () => (
     <table className="w-full">
       <thead className="bg-gray-50">
@@ -340,7 +152,7 @@ const Borrow = () => {
           >
             <div className="flex items-center space-x-1">
               <span>Buku</span>
-              <SortIcon field="book.judul" />
+              <SortIcon filter={filters} field="book.judul" />
             </div>
           </th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -352,7 +164,7 @@ const Borrow = () => {
           >
             <div className="flex items-center space-x-1">
               <span>Peminjam</span>
-              <SortIcon field="user.username" />
+              <SortIcon filter={filters} field="user.username" />
             </div>
           </th>
           <th
@@ -361,7 +173,7 @@ const Borrow = () => {
           >
             <div className="flex items-center space-x-1">
               <span>Tanggal Transaksi</span>
-              <SortIcon field="borrowedAt" />
+              <SortIcon filter={filters} field="borrowedAt" />
             </div>
           </th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -625,11 +437,11 @@ const Borrow = () => {
           {/* Tabel Content */}
           <div className="overflow-x-auto">
             {isMobile ? (
-              <>
+              <div className="p-4">
                 {data.map((item) => (
-                  <BorrowCard key={item.id} item={item} />
+                  <BorrowCard key={item._id} item={item} setShowImageModal={setShowImageModal} setSelectedImage={setSelectedImage} expandedCard={expandedCard} toggleCardExpand={toggleCardExpand} />
                 ))}
-              </>
+              </div>
             ) : (<DesktopTableView />)}
           </div>
 
@@ -681,7 +493,7 @@ const Borrow = () => {
                     disabled={filters.page === 1}
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Sebelumnya
+                    {!isMobile ? 'Sebelumnya' : '«'}
                   </button>
                   <div className="flex space-x-1">
                     {[...Array(pagination.totalPages)].map((_, index) => {
@@ -715,7 +527,7 @@ const Borrow = () => {
                     disabled={filters.page === pagination.totalPages}
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Selanjutnya
+                    {!isMobile ? 'Selanjutnya' : '»'}
                   </button>
                 </div>
               </div>

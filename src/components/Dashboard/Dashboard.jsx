@@ -138,15 +138,15 @@ const Dashboard = () => {
 
     if (selectedRange === "all") {
       // monthly data for alltime
-      const monthlyGrouped = stats.monthlyData.reduce((acc, curr) => {
-        const month = curr._id.month;
+      const monthlyGrouped = stats.monthlyData.reduce((acc, item) => {
+        const month = item._id.month;
         if (!acc[month]) {
-          acc[month] = { borrowed: 0, returned: 0 }
+          acc[month] = { borrowed: 0, returned: 0 };
         }
-        if (curr._id.status === "borrowed") {
-          acc[month].borrowed += 1;
-        } else {
-          acc[month].returned += 1;
+        if (item._id.status === "borrowed") {
+          acc[month].borrowed = item.count;
+        } else if (item._id.status === "returned") {
+          acc[month].returned = item.count;
         }
         return acc;
       }, {});
@@ -154,6 +154,7 @@ const Dashboard = () => {
       const labels = Object.keys(monthlyGrouped).sort();
       const borrwedData = labels.map(month => monthlyGrouped[month].borrowed);
       const returnedData = labels.map(month => monthlyGrouped[month].returned);
+      console.log(labels, borrwedData, returnedData)
 
       return {
         labels,
