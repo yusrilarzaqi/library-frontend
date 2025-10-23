@@ -127,7 +127,6 @@ const DataList = () => {
   const fetchBookDetails = async (bookId) => {
     try {
       const response = await dataService.getBookById(bookId);
-      console.log(response.data)
       setSelectedBook(response.data);
       setShowBookModal(true);
     } catch (error) {
@@ -297,9 +296,9 @@ const DataList = () => {
       formData.append('kodePenulis', addForm.kodePenulis);
       if (coverImage) formData.append('coverImage', coverImage);
       await dataService.createBook(formData);
-      // setShowAddModal(false);
+      setShowAddModal(false);
       setFormErrors({});
-      // fetchData(); // Refresh data
+      fetchData(); // Refresh data
     } catch (error) {
       console.error('Error creating book:', error);
       const errorMessage = error.response?.data?.message || error.message;

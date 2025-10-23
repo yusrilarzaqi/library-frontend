@@ -154,7 +154,6 @@ const Dashboard = () => {
       const labels = Object.keys(monthlyGrouped).sort();
       const borrwedData = labels.map(month => monthlyGrouped[month].borrowed);
       const returnedData = labels.map(month => monthlyGrouped[month].returned);
-      console.log(labels, borrwedData, returnedData)
 
       return {
         labels,
@@ -193,7 +192,6 @@ const Dashboard = () => {
       const labels = Object.keys(dailyGrouped).sort();
       const borrowedData = labels.map(date => dailyGrouped[date].borrowed);
       const returnedData = labels.map(date => dailyGrouped[date].returned);
-      console.log(labels)
 
       return {
         labels,
