@@ -429,7 +429,7 @@ const Borrow = () => {
                 </p>
               </div>
               <div className="text-sm text-gray-600">
-                Halaman {pagination.currentPage} dari {pagination.totalPages}
+                Halaman {pagination.currentPage} dari {pagination.totalPage}
               </div>
             </div>
           </div>
@@ -477,7 +477,7 @@ const Borrow = () => {
           )}
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
+          {pagination.totalPage > 1 && (
             <div className="px-6 py-4 border-t bg-gray-50">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="text-sm text-gray-700">
@@ -496,12 +496,12 @@ const Borrow = () => {
                     {!isMobile ? 'Sebelumnya' : '«'}
                   </button>
                   <div className="flex space-x-1">
-                    {[...Array(pagination.totalPages)].map((_, index) => {
+                    {[...Array(pagination.totalPage)].map((_, index) => {
                       const pageNumber = index + 1;
                       // Show limited pages with ellipsis
                       if (
                         pageNumber === 1 ||
-                        pageNumber === pagination.totalPages ||
+                        pageNumber === pagination.totalPage ||
                         (pageNumber >= filters.page - 1 && pageNumber <= filters.page + 1)
                       ) {
                         return (
@@ -524,7 +524,7 @@ const Borrow = () => {
                   </div>
                   <button
                     onClick={() => handlePageChange(filters.page + 1)}
-                    disabled={filters.page === pagination.totalPages}
+                    disabled={filters.page === pagination.totalPage}
                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {!isMobile ? 'Selanjutnya' : '»'}
