@@ -64,7 +64,7 @@ const Borrow = () => {
         setPagination(response.pagination);
         return
       }
-      const response = await borrowService.getTransactions(filters)
+      const { data: response } = await borrowService.getTransactions(filters)
 
       setData(response.data);
       setStats(response.stats)
